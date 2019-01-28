@@ -1,19 +1,19 @@
 ## Preconditioned Proximal Splitting Algorithms
 
 Generic C++ classes for implementing preconditioned proximal splitting algorithms.  
-Specialization to preconditioned generalized forward-backward or forward-Douglas–Rachford proximal splitting algorithms, on problems involving graph total variation, as explained in our articles [(Raguet and Landrieu, 2015, and Raguet, 2018)](#references).  
+Specialization to preconditioned generalized forward-backward or forward-Douglas–Rachford proximal splitting algorithms, on problems involving graph total variation, as explained in our articles [(Raguet and Landrieu, 2015; Raguet, 2018)](#references).  
 Parallel implementation with OpenMP API.  
 MEX API for interface with GNU Octave or Matlab.  
 
 ### Generic classes
-`Pcd_prox` class is the most generic, with minimalist structure for a preconditioned proximal splitting algorithm.  
-`Pfdr` class specializes for the preconditioned generalized forward-backward or forward-Douglas–Rachford proximal splitting algorithms: introduces preconditioner _Γ_, weights _W_, Lipschitz metric _L_.  
-`Pfdr_d1` class specializes `Pfdr` for the graph total variation.  
+The class `Pcd_prox` is the most generic, with minimalist structure for a preconditioned proximal splitting algorithm.  
+The class `Pfdr` specializes for the preconditioned generalized forward-backward or forward-Douglas–Rachford proximal splitting algorithms: introduces preconditioner _Γ_, weights _W_, Lipschitz metric _L_.  
+The class `Pfdr_d1` specializes `Pfdr` for the graph total variation.  
 
 ### Specialization `Pfdr_d1_ql1b`: quadratic functional, ℓ<sub>1</sub> norm, bounds, and graph total variation
 Minimize functionals over a graph _G_ = (_V_, _E_), of the form   
 
-    _F_: _x_ ∈ ℝ<sup>_V_</sup> ↦  1/2 ║_y_<sup>(q)</sup> − _A_<i>x</i>║<sup>2</sup> +
+    _F_: _x_ ∈ ℝ<sup>_V_</sup> ↦  1/2 ║<i>y</i><sup>(q)</sup> − _A_<i>x</i>║<sup>2</sup> +
  ∑<sub>_v_ ∈ _V_</sub> _λ_<sub>_v_</sub> |_y_<sup>(ℓ<sub>1</sub>)</sup> − _x_<sub>_v_</sub>| +
  ∑<sub>_v_ ∈ _V_</sub> _ι_<sub>[_m_<sub>_v_</sub>, _M_<sub>_v_</sub>]</sub>(_x_<sub>_v_</sub>) +
  ∑<sub>(_u_,_v_) ∈ _E_</sub> _w_<sub>(_u_,_v_)</sub>
