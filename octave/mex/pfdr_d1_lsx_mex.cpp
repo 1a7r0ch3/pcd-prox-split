@@ -100,10 +100,7 @@ static void pfdr_d1_lsx_mex(int nlhs, mxArray **plhs, int nrhs,
     /**  preconditioned forward-Douglas-Rachford  **/
 
     Pfdr_d1_lsx<real_t, vertex_t> *pfdr = new Pfdr_d1_lsx<real_t, vertex_t>(
-        V, D, E, edges, loss, Y, d1_coor_weights);
-
-    pfdr->set_iterate(X);
-    pfdr->initialize_iterate();
+        V, E, edges, loss, D, Y, d1_coor_weights);
 
     pfdr->set_edge_weights(edge_weights, homo_edge_weight);
     pfdr->set_loss(loss_weights);
@@ -111,6 +108,8 @@ static void pfdr_d1_lsx_mex(int nlhs, mxArray **plhs, int nrhs,
     pfdr->set_relaxation(rho);
     pfdr->set_algo_param(dif_tol, it_max, verbose);
     pfdr->set_monitoring_arrays(Obj, Dif);
+    pfdr->set_iterate(X);
+    pfdr->initialize_iterate();
 
     *it = pfdr->precond_proximal_splitting();
 
@@ -121,10 +120,12 @@ static void pfdr_d1_lsx_mex(int nlhs, mxArray **plhs, int nrhs,
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 { 
     if (mxIsDouble(prhs[1])){
-        check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS, "double");
+        check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS,
+            "double");
         pfdr_d1_lsx_mex<double>(nlhs, plhs, nrhs, prhs);
     }else{
-        check_args(nrhs, prhs, args_real_t, n_real_t, mxSINGLE_CLASS, "single");
+        check_args(nrhs, prhs, args_real_t, n_real_t, mxSINGLE_CLASS,
+            "single");
         pfdr_d1_lsx_mex<float>(nlhs, plhs, nrhs, prhs);
     }
 }

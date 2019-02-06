@@ -157,7 +157,6 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
     pfdr->set_relaxation(rho);
     pfdr->set_algo_param(dif_tol, it_max, verbose);
     pfdr->set_monitoring_arrays(Obj, Dif);
-
     pfdr->set_iterate(X);
     pfdr->initialize_iterate();
 
@@ -175,10 +174,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if ((!mxIsEmpty(prhs[0]) && mxIsDouble(prhs[0])) ||
         (mxGetNumberOfElements(prhs[1]) > 1 && mxIsDouble(prhs[1])) || 
         (nrhs > 4 && !mxIsEmpty(prhs[4]) && mxIsDouble(prhs[4]))){
-        check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS, "double");
+        check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS,
+            "double");
         pfdr_d1_ql1b_mex<double, mxDOUBLE_CLASS>(nlhs, plhs, nrhs, prhs);
     }else{
-        check_args(nrhs, prhs, args_real_t, n_real_t, mxSINGLE_CLASS, "single");
+        check_args(nrhs, prhs, args_real_t, n_real_t, mxSINGLE_CLASS,
+            "single");
         pfdr_d1_ql1b_mex<float, mxSINGLE_CLASS>(nlhs, plhs, nrhs, prhs);
     }
 }
