@@ -17,6 +17,12 @@ typedef uint32_t vertex_t;
 # define VERTEX_CLASS mxUINT32_CLASS
 # define VERTEX_ID "uint32"
 
+/* arrays with arguments type */
+static const int args_real_t[] = {0, 1, 3, 4, 5, 6, 7, 8};
+static const int n_real_t = 8;
+static const int args_vertex_t[] = {2};
+static const int n_vertex_t = 1;
+
 /* function for checking arguments type */
 static void check_args(int nrhs, const mxArray *prhs[], const int* args,
     int n, mxClassID id, const char* id_name)
@@ -31,11 +37,18 @@ static void check_args(int nrhs, const mxArray *prhs[], const int* args,
     }
 }
 
-/* arrays with arguments type */
-static const int args_real_t[] = {0, 1, 3, 4, 5, 6, 7, 8};
-static const int n_real_t = 8;
-static const int args_vertex_t[] = {2};
-static const int n_vertex_t = 1;
+/* resize memory buffer allocated by mxMalloc and create a row vector */
+template <typename type_t>
+static mxArray* resize_and_create_mxRow(type_t* buffer, size_t size,
+    mxClassID id)
+{
+    mxArray* row = mxCreateNumericMatrix(0, 0, id, mxREAL);
+    mxSetM(row, 1);
+    mxSetN(row, size);
+    buffer = (type_t*) mxRealloc((void*) buffer, sizeof(type_t)*size);
+    mxSetData(row, (void*) buffer);
+    return row;
+}
 
 /* template for handling both single and double precisions */
 template<typename real_t, mxClassID mxREAL_CLASS>
@@ -132,16 +145,11 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
     real_t *X = (real_t*) mxGetPr(plhs[0]);
     plhs[1] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
     int *it = (int*) mxGetData(plhs[1]);
-    real_t *Obj = nullptr;
-    if (nlhs > 2){
-        plhs[2] = mxCreateNumericMatrix(1, it_max + 1, mxREAL_CLASS, mxREAL);
-        Obj = (real_t*) mxGetData(plhs[2]);
-    }
-    real_t *Dif = nullptr;
-    if (nlhs > 3){
-        plhs[3] = mxCreateNumericMatrix(1, it_max, mxREAL_CLASS, mxREAL);
-        Dif = (real_t*) mxGetData(plhs[3]);
-    }
+
+    real_t* Obj = nlhs > 2 ?
+        (real_t*) mxMalloc(sizeof(real_t)*(it_max + 1)) : nullptr;
+    real_t *Dif = nlhs > 3 ?
+        (real_t*) mxMalloc(sizeof(double)*it_max) : nullptr;
 
     /**  preconditioned forward-Douglas-Rachford  **/
 
@@ -164,6 +172,15 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
 
     pfdr->set_iterate(nullptr); // prevent X to be free()'d
     delete pfdr;
+
+    /**  resize monitoring arrays and assign to outputs  **/
+    if (nlhs > 2){
+        plhs[2] = resize_and_create_mxRow(Obj, *it + 1, mxREAL_CLASS);
+    }
+    if (nlhs > 3){
+        plhs[3] = resize_and_create_mxRow(Dif, *it, mxREAL_CLASS);
+    }
+
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])

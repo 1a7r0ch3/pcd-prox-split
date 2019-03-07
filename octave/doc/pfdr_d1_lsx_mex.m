@@ -59,9 +59,9 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 % edge_weights - (real) array of length E or scalar for homogeneous weights
 % loss_weights - weights on vertices (ignored for linear loss); (real) array of
 %     length V or empty for no weights
-% d1_coor_weights - for multidimensional data, weights the coordinates in the
-%     l1 norms of finite differences; all weights must be strictly positive, and
-%     it is advised to normalize the weights so that the first value is unity
+% d1_coor_weights - weights the coordinates in the l1 norms of finite
+%     differences; all weights must be strictly positive, and it is advised to
+%     normalize the weights so that the first value is unity
 % rho      - relaxation parameter, 0 < rho < 2
 %            1 is a conservative value; 1.5 often speeds up convergence
 % cond_min - stability of preconditioning; 0 < cond_min < 1;
@@ -91,12 +91,10 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 %
 % X   - final minimizer, array of length V (real)
 % it  - actual number of iterations performed
-% Obj - the values of the objective functional along iterations
-%       (array of length it_max + 1 with it + 1 nonzero values)
-%       in the precomputed A^t A version, a constant 1/2||Y||^2 in the
-%       quadratic part is omited
+% Obj - the values of the objective functional along iterations (array of
+%       length it + 1)
 % Dif - if requested, the iterate evolution along iterations
-%       (array of length it_max with it nonzero values)
+%       (array of length it)
 % 
 % Parallel implementation with OpenMP API.
 %

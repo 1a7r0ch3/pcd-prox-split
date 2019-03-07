@@ -92,12 +92,11 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(Y, A, edges, d1_weights, ...
 %
 % X   - final minimizer, array of length V (real)
 % it  - actual number of iterations performed
-% Obj - the values of the objective functional along iterations
-%       (array of length it_max + 1 with it + 1 nonzero values)
-%       in the precomputed A^t A version, a constant 1/2||Y||^2 in the
-%       quadratic part is omited
+% Obj - the values of the objective functional along iterations (array of
+%       length it + 1); in the precomputed A^t A version, a constant
+%       1/2||Y||^2 in the quadratic part is omited
 % Dif - if requested, the iterate evolution along iterations
-%       (array of length it_max with it nonzero values)
+%       (array of length it)
 % 
 % Parallel implementation with OpenMP API.
 %
