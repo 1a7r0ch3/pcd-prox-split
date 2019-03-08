@@ -65,7 +65,7 @@ private:
     /**  separable loss term  **/
 
     /* observations, D-by-V array, column major format;
-     * they are assumed to lie on the simplex */
+     * must lie on the simplex */
     const real_t* Y; 
 
     /* 0 for linear (macro LINEAR)

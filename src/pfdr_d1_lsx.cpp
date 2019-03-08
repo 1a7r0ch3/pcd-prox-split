@@ -69,10 +69,10 @@ TPL void PFDR_D1_LSX::compute_lipschitz_metric()
         Lmut = (real_t*) malloc_check(sizeof(real_t)*V*D); 
         #pragma omp parallel for schedule(static) NUM_THREADS(2*V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            const real_t* Yv = Y + D*v;
+            real_t* Lv = Lmut + D*v;
             for (size_t d = 0; d < D; d++){
-                Lmut[vd] = LOSS_WEIGHTS_(v)*r*(q + c*Y[vd]);
-                vd++;
+                Lv[d] = LOSS_WEIGHTS_(v)*r*(q + c*Yv[d]);
             }
         }
         L = Lmut; lshape = MULTIDIM;
@@ -94,11 +94,12 @@ TPL void PFDR_D1_LSX::compute_hess_f()
         real_t q = loss/D;
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            real_t* Xv = X + D*v;
+            const real_t* Yv = Y + D*v;
+            real_t* Gav = Ga + D*v;
             for (size_t d = 0; d < D; d++){
-                real_t r = c/(q + c*X[vd]);
-                Ga[vd] = LOSS_WEIGHTS_(v)*(q + c*Y[vd])*r*r;
-                vd++;
+                real_t r = c/(q + c*Xv[d]);
+                Gav[d] = LOSS_WEIGHTS_(v)*(q + c*Yv[d])*r*r;
             }
         }
     }
@@ -111,17 +112,19 @@ TPL void PFDR_D1_LSX::compute_Ga_grad_f()
     if (loss == LINEAR){ /* linear loss, grad = - w Y */
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            size_t vd = D*v;
             for (size_t d = 0; d < D; d++){
-                Ga_grad_f[vd] = -W_Ga_Y_(v, vd++)*Y[vd];
-             }
+                Ga_grad_f[vd] = -W_Ga_Y_(v, vd)*Y[vd];
+                vd++;
+            }
         }
     }else if (loss == QUADRATIC){ /* quadratic loss, grad = w (X - Y) */
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            size_t vd = D*v;
             for (size_t d = 0; d < D; d++){
-                Ga_grad_f[vd] = W_Ga_Y_(v, vd++)*(X[vd] - Y[vd]);
+                Ga_grad_f[vd] = W_Ga_Y_(v, vd)*(X[vd] - Y[vd]);
+                vd++;
             }
         }
     }else{ /* dKLs/dx_k = -(1-s)(s/D + (1-s)y_k)/(s/D + (1-s)x_k) */
@@ -149,23 +152,21 @@ TPL real_t PFDR_D1_LSX::compute_f()
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V) \
             reduction(+:obj)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            real_t* Xv = X + D*v;
+            const real_t* Yv = Y + D*v;
             real_t prod = ZERO;
-            for (size_t d = 0; d < D; d++){
-                prod -= X[vd]*Y[vd];
-                vd++;
-            }
+            for (size_t d = 0; d < D; d++){ prod += Xv[d]*Yv[d]; }
             obj -= LOSS_WEIGHTS_(v)*prod;
         }
     }else if (loss == QUADRATIC){
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V) \
             reduction(+:obj)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            real_t* Xv = X + D*v;
+            const real_t* Yv = Y + D*v;
             real_t dif2 = ZERO;
             for (size_t d = 0; d < D; d++){
-                dif2 += (X[vd] - Y[vd])*(X[vd] - Y[vd]);
-                vd++;
+                dif2 += (Xv[d] - Yv[d])*(Xv[d] - Yv[d]);
             }
             obj += LOSS_WEIGHTS_(v)*dif2;
         }
@@ -176,12 +177,12 @@ TPL real_t PFDR_D1_LSX::compute_f()
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V) \
             reduction(+:obj) 
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            real_t* Xv = X + D*v;
+            const real_t* Yv = Y + D*v;
             real_t KLs = ZERO;
             for (size_t d = 0; d < D; d++){
-                real_t ys = q + c*Y[vd];
-                KLs += ys*log(ys/(q + c*X[vd]));
-                vd++;
+                real_t ys = q + c*Yv[d];
+                KLs += ys*log(ys/(q + c*Xv[d]));
             }
             obj += LOSS_WEIGHTS_(v)*KLs;
         }
@@ -194,7 +195,7 @@ TPL void PFDR_D1_LSX::preconditioning(bool init)
     Pfdr_d1<real_t, vertex_t>::preconditioning(init);
 
     /* precompute first-order information for loss gradient */
-    if (loss == LINEAR || loss == QUADRATIC){ 
+    if (loss == LINEAR || loss == QUADRATIC){
         /* linear loss, grad = - w Y; quadratic loss, grad = w (X - Y) */
         if (loss_weights){
             const size_t Dga = gashape == MULTIDIM ? D : 1;
@@ -203,9 +204,10 @@ TPL void PFDR_D1_LSX::preconditioning(bool init)
             }
             #pragma omp parallel for schedule(static) NUM_THREADS(V*Dga, V)
             for (vertex_t v = 0; v < V; v++){
-                size_t vd = v*Dga;
+                real_t* W_Ga_Yv = W_Ga_Y + Dga*v;
+                real_t* Gav = Ga + Dga*v;
                 for (size_t d = 0; d < Dga; d++){
-                    W_Ga_Y[vd] = loss_weights[v]*Ga_(v, vd++);
+                    W_Ga_Yv[d] = loss_weights[v]*Gav[d];
                 }
             }
         }else{
@@ -217,10 +219,11 @@ TPL void PFDR_D1_LSX::preconditioning(bool init)
         real_t q = loss/D;
         #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            size_t vd = v*D;
+            real_t* W_Ga_Yv = W_Ga_Y + D*v;
+            real_t* Gav = Ga + D*v;
+            const real_t* Yv = Y + D*v;
             for (size_t d = 0; d < D; d++){
-                W_Ga_Y[vd] = -LOSS_WEIGHTS_(v)*Ga[vd]*(q + c*Y[vd]);
-                vd++;
+                W_Ga_Yv[d] = -LOSS_WEIGHTS_(v)*Gav[d]*(q + c*Yv[d]);
             }
         }
     }
@@ -234,8 +237,8 @@ TPL void PFDR_D1_LSX::initialize_iterate()
         * and dividing by the sum *//*
         #pragma omp parallel for schedule(static) NUM_THREADS(2*V*D, V)
         for (vertex_t v = 0; v < V; v++){
-            const real_t* Yv = Y + v*D;
-            real_t* Xv = X + v*D;
+            const real_t* Yv = Y + D*v;
+            real_t* Xv = X + D*v;
             real_t min = Yv[0], max = Yv[0], sum = Yv[0];
             for (size_t d = 1; d < D; d++){
                 sum += Yv[d];
@@ -264,12 +267,12 @@ TPL real_t PFDR_D1_LSX::compute_evolution()
     #pragma omp parallel for schedule(static) NUM_THREADS(V*D, V) \
         reduction(+:dif, norm)
     for (vertex_t v = 0; v < V; v++){
-        size_t vd = v*D;
+        real_t* Xv = X + D*v;
+        real_t* last_Xv = last_X + D*v;
         real_t dif_v = ZERO; 
         for (size_t d = 0; d < D; d++){
-            dif_v += abs(last_X[vd] - X[vd]);
-            last_X[vd] = X[vd];
-            vd++;
+            dif_v += abs(last_Xv[d] - Xv[d]);
+            last_Xv[d] = Xv[d];
         }
         dif += LOSS_WEIGHTS_(v)*dif_v;
         norm += LOSS_WEIGHTS_(v);
