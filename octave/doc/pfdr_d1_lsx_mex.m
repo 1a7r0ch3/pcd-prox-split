@@ -23,24 +23,29 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 % Available separable data-fidelity loss include:
 %
 % linear
-%       f(x) = - <x, y> ,  with  <x, y> = sum_{v,d} x_{v,d} y_{v,d} ;
+%       f(x) = - <x, y>_w ,
+%   with  <x, y>_w = sum_{v,d} w_d x_{v,d} y_{v,d} ;
 %
 % quadratic
 %       f(x) = 1/2 ||y - x||_{l2,w}^2 ,
 %   with  ||y - x||_{l2,w}^2 = sum_{v,d} w_v (y_{v,d} - x_{v,d})^2 ;
 %
-% smoothed Kullback-Leibler divergence
+% smoothed Kullback-Leibler divergence (cross-entropy)
 %       f(x) = sum_v w_v KLs(x_v, y_v),
-%   with KLs(y_v, x_v) = KL(s u + (1 - s) y_v ,  s u + (1 - s) x_v),
-%   where KL is the regular Kullback-Leibler divergence,
-%       u is the uniform discrete distribution over {1,...,D}, and
-%       s = loss is the smoothing parameter ;
-%   It yields, 
-%     KLs(y_v, x_v) = - sum_k (s/D + (1 - s) y_v) log(s/D + (1 - s) x_v)
-%                     - H(s u + (1 - s) y_v) ,
-%   where the constant - H(s u + (1 - s) y_v) is equal to
-%     sum_k (s/D + (1 - s) y_v) log(s/D + (1 - s) y_v)
+%   with KLs(y_v, x_v) = KL(s u + (1 - s) y_v ,  s u + (1 - s) x_v), where
+%     KL is the regular Kullback-Leibler divergence,
+%     u is the uniform discrete distribution over {1,...,D}, and
+%     s = loss is the smoothing parameter ;
+%   it yields
 %
+%     KLs(y_v, x_v) = H(s u + (1 - s) y_v)
+%         - sum_d (s/D + (1 - s) y_{v,d}) log(s/D + (1 - s) x_{v,d}) ,
+%
+%   where H is the entropy, that is H(s u + (1 - s) y_v)
+%       = - sum_d (s/D + (1 - s) y_{v,d}) log(s/D + (1 - s) y_{v,d}) ;
+%   note that the choosen order of the arguments in the Kullback--Leibler
+%   does not penalize the entropy of x_v (H(s u + (1 - s) y_v) is a constant),
+%   hence this loss is actually equivalent to cross-entropy.
 %
 % INPUTS: real numeric type is either single or double, not both;
 %         indices are C-style (start at 0) of type uint32
@@ -49,16 +54,16 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 %
 % loss  - 0 for linear, 1 for quadratic, 0 < loss < 1 for smoothed
 %         Kullback-Leibler (see above)
-% Y     - observations, (real) D-by-V array, column-major format; with linear
-%         loss, should be premultiplied by the weights, if any
+% Y     - observations, (real) D-by-V array, column-major format, supposed to
+%         lie on the simplex
 % edges - list of edges (C-style indices), (uint32) array of length 2E;
 %     edge number e connects vertices indexed at edges[2*e] and edges[2*e+1];
 %     every vertex should belong to at least one edge with a nonzero 
 %     penalization coefficient. If it is not the case, a workaround is to add 
 %     an edge from the vertex to itself with a small nonzero weight
 % edge_weights - (real) array of length E or scalar for homogeneous weights
-% loss_weights - weights on vertices (ignored for linear loss); (real) array of
-%     length V or empty for no weights
+% loss_weights - weights on vertices; (real) array of length V or empty for no
+%     weights
 % d1_coor_weights - weights the coordinates in the l1 norms of finite
 %     differences; all weights must be strictly positive, and it is advised to
 %     normalize the weights so that the first value is unity

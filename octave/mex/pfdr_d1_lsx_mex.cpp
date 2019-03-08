@@ -134,7 +134,7 @@ static void pfdr_d1_lsx_mex(int nlhs, mxArray **plhs, int nrhs,
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 { 
-    /* real type is determined by the first parameter Y */
+    /* real type is determined by the second parameter Y */
     if (mxIsDouble(prhs[1])){
         check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS,
             "double");
