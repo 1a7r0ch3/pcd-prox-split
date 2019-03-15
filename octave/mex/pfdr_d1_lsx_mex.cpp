@@ -63,11 +63,6 @@ static void pfdr_d1_lsx_mex(int nlhs, mxArray **plhs, int nrhs,
     const real_t *Y = (real_t*) mxGetData(prhs[1]);
     const real_t *loss_weights = nrhs > 4 && !mxIsEmpty(prhs[4]) ?
         (real_t*) mxGetData(prhs[4]) : nullptr;
-    if (loss == LINEAR && loss_weights){
-        mexErrMsgIdAndTxt("MEX", "PFDR d1 loss simplex: with linear loss,"
-            "weights should be directly incorporated in the observations "
-            "and argument 5 'loss_weights' should be left empty.");
-    }
     
     /* graph structure */
     check_args(nrhs, prhs, args_vertex_t, n_vertex_t, VERTEX_CLASS, VERTEX_ID);
