@@ -19,11 +19,12 @@ static inline int omp_get_thread_num(){ return 0; }
 static inline int compute_num_threads(uintmax_t num_ops, uintmax_t max_threads)
 {
 #ifdef _OPENMP
-    max_threads = max_threads > 1 ? max_threads : 1;
-    int m = omp_get_num_procs();
-    m = m < max_threads ? m : max_threads;
-    int n = num_ops/MIN_OPS_PER_THREAD;
-    return n < m ? n : m;
+    int num_threads = num_ops/MIN_OPS_PER_THREAD;
+    if (num_threads > omp_get_num_procs()){
+        num_threads = omp_get_num_procs();
+    }
+    if (num_threads > max_threads){ num_threads = max_threads; }
+    return num_threads > 1 ? num_threads : 1;
 #else
     return 1;
 #endif

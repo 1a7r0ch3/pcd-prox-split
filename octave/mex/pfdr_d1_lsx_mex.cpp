@@ -42,10 +42,14 @@ static mxArray* resize_and_create_mxRow(type_t* buffer, size_t size,
     mxClassID id)
 {
     mxArray* row = mxCreateNumericMatrix(0, 0, id, mxREAL);
-    mxSetM(row, 1);
-    mxSetN(row, size);
-    buffer = (type_t*) mxRealloc((void*) buffer, sizeof(type_t)*size);
-    mxSetData(row, (void*) buffer);
+    if (size){
+        mxSetM(row, 1);
+        mxSetN(row, size);
+        buffer = (type_t*) mxRealloc((void*) buffer, sizeof(type_t)*size);
+        mxSetData(row, (void*) buffer);
+    }else{
+        mxFree((void*) buffer);
+    }
     return row;
 }
 
