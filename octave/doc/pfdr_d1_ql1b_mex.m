@@ -34,69 +34,72 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(Y, A, edges, d1_weights, ...
 %         inputs with default arguments can be omited but all the subsequent
 %         arguments must then be omited as well
 %
-% Y - observations, (real) array of length N (direct matricial case)
-%     or of length V (premultiplied to the left by A^t), or empty matrix (for
-%     all zeros)
-% A - matrix, (real) N-by-V array (direct matricial case), or V-by-V array
-%     (premultiplied to the left by A^t), or V-by-1 array (square diagonal
-%     of A^t A = A^2), or nonzero scalar (for identity matrix), or zero scalar
-%     (for no quadratic part); if N = V in a direct matricial case, the last
-%     argument AtA_if_square must be set to false
+% Y - observations, (real) array of length N (direct matricial case), or
+%                          array of length V (left-premult. by A^t), or
+%                          empty matrix (for all zeros)
+% A - matrix, (real) N-by-V array (direct matricial case), or
+%                    V-by-V array (premultiplied to the left by A^t), or
+%                    V-by-1 array (_square_ diagonal of A^t A = A^2), or
+%                    nonzero scalar (for identity matrix), or
+%                    zero scalar (for no quadratic part);
+%     for an arbitrary scalar matrix, use identity and scale observations and
+%     penalizations accordingly
+%     if N = V in a direct matricial case, the last argument 'AtA_if_square'
+%     must be set to false
 % edges - list of edges (C-style indices), (uint32) array of length 2E;
-%     edge number e connects vertices indexed at edges[2*e] and edges[2*e+1];
+%     edge number e connects vertices indexed at edges(2*e - 1) and edges(2*e);
 %     every vertex should belong to at least one edge with a nonzero 
 %     penalization coefficient. If it is not the case, a workaround is to add 
 %     an edge from the vertex to itself with a small nonzero weight
 % d1_weights - array of length E or scalar for homogeneous weights (real)
-% Yl1        - offset for l1 penalty, (real) array of length V,
-%              or empty matrix (for all zeros)
-% l1_weights - array of length V or scalar for homogeneous weights (real)
-%              set to zero for no l1 penalization 
-% low_bnd    - array of length V or scalar (real)
-%              set to negative infinity for no lower bound
-% upp_bnd    - array of length V or scalar (real)
-%              set to positive infinity for no upper bound
-% L          - information on Lipschitzianity of the operator A^* A.
-%              either a scalar satisfying 0 < L <= ||A^* A||,
-%              or a diagonal matrix (array of length V (real)) satisfying
-%              0 < L and ||L^(-1/2) A^* A L^(-1/2)|| <= 1
-%              leave empty for automatic estimation 
-% rho        - relaxation parameter, 0 < rho < 2
-%              1 is a conservative value; 1.5 often speeds up convergence
-% cond_min   - stability of preconditioning; 0 < cond_min < 1;
-%              corresponds roughly to the minimum ratio between different
-%              directions of the descent metric; 1e-2 is a typical value;
-%              smaller values might enhance preconditioning but might also
-%              make it unstable; increase this value if iteration steps seem
-%              to get too small
-% dif_rcd    - reconditioning criterion on iterate evolution;
-%              a reconditioning is performed if relative changes of the
-%              iterate drops below dif_rcd; it is then divided by 10;
-%              10*dif_tol is a typical value, 1e2*dif_tol or 1e3*dif_tol might
-%              speed up convergence;
-%              warning: reconditioning might temporarily draw minimizer away
-%              from solution, it is advised to monitor objective  value when 
-%              using reconditioning
-% dif_tol    - stopping criterion on iterate evolution; algorithm stops if
-%              relative changes (in Euclidean norm) is less than dif_tol;
-%              1e-5 is a typical value; a lower one can give better precision
-%              but with longer computational time
-% it_max     - maximum number of iterations;
-%              usually depends on the size of the problems in relation to the
-%              available computational budget
-% verbose    - if nonzero, display information on the progress, every
-%              'verbose' iterations
-%
+% Yl1 - offset for l1 penalty, (real) array of length V, or empty matrix for
+%     all zeros
+% l1_weights - array of length V or scalar for homogeneous weights (real);
+%     set to zero for no l1 penalization 
+% low_bnd - array of length V or scalar (real);
+%     set to negative infinity for no lower bound
+% upp_bnd - array of length V or scalar (real);
+%     set to positive infinity for no upper bound
+% L - information on Lipschitzianity of the operator A^* A;
+%         scalar satisfying 0 < L <= ||A^* A||, or
+%         diagonal matrix (real array of length V) satisfying
+%             0 < L and ||L^(-1/2) A^* A L^(-1/2)|| <= 1, or
+%         empty matrix for automatic estimation 
+% rho - relaxation parameter, 0 < rho < 2;
+%     1 is a conservative value; 1.5 often speeds up convergence
+% cond_min - stability of preconditioning; 0 < cond_min < 1;
+%     corresponds roughly to the minimum ratio between different directions of
+%     the descent metric; 1e-2 is a typical value;
+%     smaller values might enhance preconditioning but might also make it
+%     unstable; increase this value if iteration steps seem to get too small
+% dif_rcd - reconditioning criterion on iterate evolution;
+%     a reconditioning is performed if relative changes of the iterate drops
+%     below dif_rcd; it is then divided by 10;
+%     10*dif_tol is a typical value, 1e2*dif_tol or 1e3*dif_tol might speed up
+%     convergence;
+%     WARNING: reconditioning might temporarily draw minimizer away from
+%     solution, it is advised to monitor objective value when using
+%     reconditioning
+% dif_tol - stopping criterion on iterate evolution; algorithm stops if
+%     relative changes (in Euclidean norm) is less than dif_tol;
+%     1e-5 is a typical value; a lower one can give better precision but with
+%     longer computational time
+% it_max - maximum number of iterations;
+%     usually depends on the size of the problems in relation to the available
+%     computational budget
+% verbose - if nonzero, display information on the progress, every 'verbose'
+%     iterations
 %
 % OUTPUTS:
 %
-% X   - final minimizer, array of length V (real)
-% it  - actual number of iterations performed
-% Obj - the values of the objective functional along iterations (array of
-%       length it + 1); in the precomputed A^t A version, a constant
-%       1/2||Y||^2 in the quadratic part is omited
-% Dif - if requested, the iterate evolution along iterations
-%       (array of length it)
+% X - final minimizer, array of length V (real)
+% it - actual number of iterations performed
+% Obj - the values of the objective functional along iterations;
+%     array of length cp_it + 1;
+%     WARNING: in the precomputed A^t A version (including diagonal or identity
+%     case), a constant 1/2||Y||^2 in the quadratic part is omited
+% Dif  - if requested, the iterate evolution along iterations;
+%     array of length it
 % 
 % Parallel implementation with OpenMP API.
 %
@@ -107,4 +110,4 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(Y, A, edges, d1_weights, ...
 % H. Raguet, A Note on the Forward-Douglas-Rachford Splitting for Monotone 
 % Inclusion and Convex Optimization, Optimization Letters, 2018, 1-24
 %
-% Hugo Raguet 2016, 2018
+% Hugo Raguet 2016, 2018, 2019

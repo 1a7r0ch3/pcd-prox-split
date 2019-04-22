@@ -65,12 +65,16 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
     size_t N = mxGetM(prhs[1]);
     vertex_t V = mxGetN(prhs[1]);
 
-    const real_t *Y = !mxIsEmpty(prhs[0]) ?
+    if (N == 0 && V == 0){
+        mexErrMsgIdAndTxt("MEX", "PFDR graph d1 quadratic l1 bounds: "
+            "argument A cannot be empty.");
+    }
+
+    const real_t* Y = !mxIsEmpty(prhs[0]) ?
         (real_t*) mxGetData(prhs[0]) : nullptr;
-    const real_t *A = (N == 1 && V == 1) ?
+    const real_t* A = (N == 1 && V == 1) ?
         nullptr : (real_t*) mxGetData(prhs[1]);
-    const real_t a = (N == 1 && V == 1) ?
-        mxGetScalar(prhs[1]) : 1.0;
+    const real_t a = (N == 1 && V == 1) ?  mxGetScalar(prhs[1]) : 1.0;
 
     if (V == 1){ /* quadratic functional is only weighted square difference */
         if (N == 1){
@@ -93,7 +97,7 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
     /* graph structure */
     check_args(nrhs, prhs, args_vertex_t, n_vertex_t, VERTEX_CLASS, VERTEX_ID);
     size_t E = mxGetNumberOfElements(prhs[2])/2;
-    const vertex_t *edges = (vertex_t*) mxGetData(prhs[2]);
+    const vertex_t* edges = (vertex_t*) mxGetData(prhs[2]);
 
     /* penalizations */
     const real_t* d1_weights =
@@ -164,7 +168,7 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
     pfdr->set_quadratic(Y, N, A, a);
     pfdr->set_l1(l1_weights, homo_l1_weight, Yl1);
     pfdr->set_bounds(low_bnd, homo_low_bnd, upp_bnd, homo_upp_bnd);
-    if (!mxIsEmpty(prhs[8])){ pfdr->set_lipschitz_param(L, l); }
+    if (nrhs > 8 && !mxIsEmpty(prhs[8])){ pfdr->set_lipschitz_param(L, l); }
     pfdr->set_conditioning_param(cond_min, dif_rcd);
     pfdr->set_relaxation(rho);
     pfdr->set_algo_param(dif_tol, it_max, verbose);
@@ -190,10 +194,8 @@ static void pfdr_d1_ql1b_mex(int nlhs, mxArray **plhs, int nrhs,
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 { 
     /* real type is determined by the first parameter Y if nonempty;
-     * or by the second parameter A if nonempty and nonscalar;
      * or by the fifth parameter Yl1 */
     if ((!mxIsEmpty(prhs[0]) && mxIsDouble(prhs[0])) ||
-        (mxGetNumberOfElements(prhs[1]) > 1 && mxIsDouble(prhs[1])) || 
         (nrhs > 4 && !mxIsEmpty(prhs[4]) && mxIsDouble(prhs[4]))){
         check_args(nrhs, prhs, args_real_t, n_real_t, mxDOUBLE_CLASS,
             "double");

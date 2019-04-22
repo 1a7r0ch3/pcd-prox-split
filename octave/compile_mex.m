@@ -11,8 +11,7 @@ try
     if LDFLAGS(end)==10, LDFLAGS = LDFLAGS(1:end-1); end
     CXXFLAGSorig = CXXFLAGS;
     LDFLAGSorig = LDFLAGS;
-    CXXFLAGS = sprintf('%s %s', CXXFLAGS, '-fopenmp');
-    % CXXFLAGS = sprintf('%s %s', CXXFLAGS, '-fopenmp -ggdb -Wall -O0');
+    CXXFLAGS = sprintf('%s %s', CXXFLAGS, '-Wpedantic -std=c++11 -fopenmp');
     LDFLAGS = sprintf('%s %s', LDFLAGS, '-fopenmp');
     setenv('CXXFLAGS', CXXFLAGS);
     setenv('LDFLAGS', LDFLAGS);
@@ -35,7 +34,7 @@ try
     clear pfdr_d1_lsx_mex
     %}
     
-    system('rm *.o')
+    system('rm *.o');
 catch % if an error occur, makes sure not to change the working directory
     % back to original environment
     setenv('CXXFLAGS', CXXFLAGSorig);

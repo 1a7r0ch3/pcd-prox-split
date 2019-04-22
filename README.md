@@ -65,11 +65,14 @@ KL: (_p_, _q_) ↦ ∑<sub>_d_ ∈ _D_</sub> _p_<sub>_d_</sub> log(_p_<sub>_d_</
     └── src/        C++ sources  
 
 ### C++ documentation
+Requires `C++11`.  
+Be sure to have OpenMP enabled with you compiler to enjoy parallelism.  
 The C++ classes are documented within the corresponding headers in `include/`.  
 
 ### GNU Octave or Matlab
-The MEX interfaces are documented within dedicated `.m` files in `octave/doc/`.  
-See `mex/compile_mex.m` for typical compilation commands under UNIX systems.  
+See the script `compile_mex.m` for typical compilation commands; it can be run directly from the GNU Octave interpreter, but Matlab users must set compilation flags directly on the command line `CXXFLAGS = ...` and `LDFLAGS = ...`.  
+
+Extensive documention of the MEX interfaces can be found within dedicated `.m` files in `octave/doc/`.  
 
 ### References
 H. Raguet and L. Landrieu, [Preconditioning of a Generalized Forward-Backward Splitting and Application to Optimization on Graphs](https://1a7r0ch3.github.io/pgfb/), 2015.

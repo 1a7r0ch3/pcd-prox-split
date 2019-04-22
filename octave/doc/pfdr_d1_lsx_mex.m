@@ -1,8 +1,8 @@
-function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
+function [X, it, Obj, Dif] = pfdr_d1_lsx_mex(loss, Y, edges, edge_weights, ...
     loss_weights, d1_coor_weights, rho, cond_min, dif_rcd, dif_tol, it_max, ...
     verbose)
 %
-%        [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges,
+%        [X, it, Obj, Dif] = pfdr_d1_lsx_mex(loss, Y, edges,
 %   edge_weights = 1.0, loss_weights = [], d1_coor_weights = [], rho = 1.0,
 %   cond_min = 1e-2, dif_rcd = 1e-2, dif_tol = 1e-3, it_max = 1e3,
 %   verbose = 1e1)
@@ -52,12 +52,12 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 %         inputs with default arguments can be omited but all the subsequent
 %         arguments must then be omited as well
 %
-% loss  - 0 for linear, 1 for quadratic, 0 < loss < 1 for smoothed
-%         Kullback-Leibler (see above)
-% Y     - observations, (real) D-by-V array, column-major format, supposed to
-%         lie on the simplex
+% loss - 0 for linear, 1 for quadratic, 0 < loss < 1 for smoothed
+%     Kullback-Leibler (see above)
+% Y     - observations, (real) D-by-V array, column-major format;
+%     the value at each vertex is supposed to lie on the simplex
 % edges - list of edges (C-style indices), (uint32) array of length 2E;
-%     edge number e connects vertices indexed at edges[2*e] and edges[2*e+1];
+%     edge number e connects vertices indexed at edges(2*e - 1) and edges(2*e);
 %     every vertex should belong to at least one edge with a nonzero 
 %     penalization coefficient. If it is not the case, a workaround is to add 
 %     an edge from the vertex to itself with a small nonzero weight
@@ -67,39 +67,36 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 % d1_coor_weights - weights the coordinates in the l1 norms of finite
 %     differences; all weights must be strictly positive, and it is advised to
 %     normalize the weights so that the first value is unity
-% rho      - relaxation parameter, 0 < rho < 2
-%            1 is a conservative value; 1.5 often speeds up convergence
+% rho - relaxation parameter, 0 < rho < 2;
+%     1 is a conservative value; 1.5 often speeds up convergence
 % cond_min - stability of preconditioning; 0 < cond_min < 1;
-%            corresponds roughly the minimum ratio to the maximum descent
-%            metric; 1e-2 is a typical value; a smaller value might enhance
-%            preconditioning
-% dif_rcd  - reconditioning criterion on iterate evolution;
-%            a reconditioning is performed if relative changes of the
-%            iterate drops below dif_rcd; it is then divided by 10;
-%            10*dif_tol is a typical value, 1e2*dif_tol or 1e3*dif_tol might
-%            speed up convergence;
-%            warning: reconditioning might temporarily draw minimizer away
-%            from solution, it is advised to monitor objective  value when 
-%            using reconditioning
-% dif_tol  - stopping criterion on iterate evolution; algorithm stops if
-%            relative changes (in l1 norm) is less than dif_tol;
-%            1e-3 is a typical value; a lower one can give better precision
-%            but with longer computational time
-% it_max   - maximum number of iterations;
-%            usually depends on the size of the problems in relation to the
-%            available computational budget
-% verbose  - if nonzero, display information on the progress, every
-%            'verbose' iterations
-%
+%     corresponds roughly to the minimum ratio to the maximum descent metric;
+%     1e-2 is a typical value; a smaller value might enhance preconditioning
+% dif_rcd - reconditioning criterion on iterate evolution;
+%     a reconditioning is performed if relative changes of the iterate drops
+%     below dif_rcd; it is then divided by 10;
+%     10*dif_tol is a typical value, 1e2*dif_tol or 1e3*dif_tol might speed up
+%     convergence; WARNING: reconditioning might temporarily draw minimizer
+%     away from solution, it is advised to monitor objective value when using
+%     reconditioning
+% dif_tol - stopping criterion on iterate evolution; algorithm stops if
+%     relative changes (in l1 norm) is less than dif_tol;
+%     1e-3 is a typical value; a lower one can give better precision but with
+%     longer computational time
+% it_max - maximum number of iterations;
+%     usually depends on the size of the problems in relation to the available
+%     computational budget
+% verbose  - if nonzero, display information on the progress, every 'verbose'
+%     iterations
 %
 % OUTPUTS:
 %
-% X   - final minimizer, array of length V (real)
-% it  - actual number of iterations performed
-% Obj - the values of the objective functional along iterations (array of
-%       length it + 1)
-% Dif - if requested, the iterate evolution along iterations
-%       (array of length it)
+% X - final minimizer, array of length V (real)
+% it - actual number of iterations performed
+% Obj - the values of the objective functional along iterations;
+%   array of length it + 1
+% Dif - if requested, the iterate evolution along iterations;
+%   array of length it
 % 
 % Parallel implementation with OpenMP API.
 %
@@ -110,4 +107,4 @@ function [X, it, Obj, Dif] = pfdr_d1_ql1b_mex(loss, Y, edges, edge_weights, ...
 % H. Raguet, A Note on the Forward-Douglas-Rachford Splitting for Monotone 
 % Inclusion and Convex Optimization, Optimization Letters, 2018, 1-24
 %
-% Hugo Raguet 2016, 2018
+% Hugo Raguet 2016, 2018, 2019
